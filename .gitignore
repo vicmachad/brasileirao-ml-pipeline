@@ -216,3 +216,22 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# --- brasileirao-ml-pipeline ---
+# Dados brutos e warehouse local sao reproduziveis pelo pipeline.
+data/raw/*
+!data/raw/.gitkeep
+data/warehouse/*
+!data/warehouse/.gitkeep
+*.duckdb
+*.duckdb.wal
+
+# dbt (package-lock.yml e versionado de proposito)
+dbt/target/
+dbt/dbt_packages/
+dbt/logs/
+dbt/.user.yml
+
+# MLflow
+mlruns/
+mlartifacts/

@@ -1,0 +1,1 @@
+"""Camada ingestion do pipeline."""

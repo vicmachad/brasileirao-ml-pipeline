@@ -1,0 +1,1 @@
+"""Camada features do pipeline."""

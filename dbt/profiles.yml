@@ -1,0 +1,20 @@
+# Profile versionado no repo: DuckDB e um arquivo local, nao ha segredo aqui.
+# Rode com DBT_PROFILES_DIR=dbt (ver Makefile).
+brasileirao:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('DUCKDB_PATH', '../data/warehouse/brasileirao.duckdb') }}"
+      threads: 4
+      extensions:
+        - httpfs
+        - parquet
+
+    ci:
+      # No CI usamos um banco efemero, reconstruido do zero a cada run.
+      type: duckdb
+      path: "../data/warehouse/ci.duckdb"
+      threads: 2
+      extensions:
+        - parquet
