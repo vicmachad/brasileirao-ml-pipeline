@@ -1,35 +1,60 @@
-.PHONY: install lint test ingest dbt-deps dbt-build dbt-test train pipeline clean
+.PHONY: install lint format test ingest dbt-deps dbt-build dbt-test train pipeline \
+        docker-build docker-pipeline docker-dbt mlflow-up mlflow-down clean
 
 export DBT_PROFILES_DIR := dbt
 
+# --- Local (uv) ---------------------------------------------------------
+
 install:
-	python -m pip install --upgrade pip
-	pip install -e ".[dbt,dev]"
+	uv sync
 
 lint:
-	ruff check src tests
-	ruff format --check src tests
+	uv run ruff check src tests
+	uv run ruff format --check src tests
+
+format:
+	uv run ruff check --fix src tests
+	uv run ruff format src tests
 
 test:
-	pytest
+	uv run pytest
 
 ingest:
-	python -m brasileirao.cli ingest
+	uv run brasileirao ingest
 
 dbt-deps:
-	cd dbt && dbt deps
+	cd dbt && uv run dbt deps
 
 dbt-build:
-	cd dbt && dbt build
+	cd dbt && uv run dbt build
 
 dbt-test:
-	cd dbt && dbt test
+	cd dbt && uv run dbt test
 
 train:
-	python -m brasileirao.cli train
+	uv run brasileirao train
 
-# Executa o pipeline completo: raw -> dbt -> feature store -> modelo.
+# Pipeline completo: raw -> dbt -> feature store -> modelo.
 pipeline: ingest dbt-build train
 
+# --- Docker -------------------------------------------------------------
+
+docker-build:
+	docker compose build
+
+docker-pipeline: docker-build
+	docker compose run --rm pipeline ingest
+	docker compose run --rm dbt build
+	docker compose run --rm pipeline train
+
+docker-dbt:
+	docker compose run --rm dbt build
+
+mlflow-up:
+	docker compose up -d mlflow
+
+mlflow-down:
+	docker compose down
+
 clean:
-	rm -rf dbt/target dbt/dbt_packages data/warehouse/*.duckdb .pytest_cache
+	rm -rf dbt/target dbt/dbt_packages dbt/logs data/warehouse/*.duckdb .pytest_cache .ruff_cache

@@ -27,6 +27,7 @@ def config() -> None:
     typer.echo(f"raw_dir               : {settings.raw_dir}")
     typer.echo(f"warehouse_path        : {settings.warehouse_path}")
     typer.echo(f"mlflow_tracking_uri   : {settings.mlflow_tracking_uri}")
+    typer.echo(f"mlflow_artifact_root  : {settings.mlflow_artifact_root}")
     typer.echo(f"focus_team            : {settings.focus_team}")
 
 

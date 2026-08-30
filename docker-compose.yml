@@ -1,0 +1,56 @@
+# Tres servicos sobre a mesma imagem:
+#   pipeline -> CLI Python (ingestao, treino)
+#   dbt      -> comandos dbt no warehouse DuckDB
+#   mlflow   -> UI de tracking em http://localhost:5000
+#
+# data/ e mlruns/ sao bind mounts: o estado do pipeline sobrevive ao container
+# e continua inspecionavel a partir do host.
+
+x-common: &common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: brasileirao-ml-pipeline:latest
+  env_file:
+    - path: .env
+      required: false
+  volumes:
+    - ./data:/app/data
+    - ./mlruns:/app/mlruns
+    # Modelos dbt montados do host: editar SQL nao exige rebuild da imagem.
+    - ./dbt:/app/dbt
+
+services:
+  pipeline:
+    <<: *common
+    # Uso: docker compose run --rm pipeline ingest
+    command: ["config"]
+
+  dbt:
+    <<: *common
+    # Uso: docker compose run --rm dbt build
+    entrypoint: ["dbt"]
+    working_dir: /app/dbt
+    command: ["build"]
+
+  mlflow:
+    <<: *common
+    entrypoint: ["mlflow"]
+    command:
+      - server
+      - --host
+      - 0.0.0.0
+      - --port
+      - "5000"
+      - --backend-store-uri
+      - sqlite:////app/mlruns/mlflow.db
+      - --default-artifact-root
+      - /app/mlruns/artifacts
+    ports:
+      - "5000:5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s

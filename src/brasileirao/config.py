@@ -6,11 +6,16 @@ funcionem igual em desenvolvimento local e no CI.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+# Em desenvolvimento o pacote roda a partir de src/, entao a raiz do repo esta
+# dois niveis acima. Dentro do container o pacote vive na .venv, onde essa
+# heuristica nao vale -- por isso PROJECT_ROOT e sobrescrivivel por env var.
+PROJECT_ROOT = Path(os.environ.get("PROJECT_ROOT", Path(__file__).resolve().parents[2]))
 
 
 class Settings(BaseSettings):
@@ -21,6 +26,7 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         env_prefix="",
         extra="ignore",
+        populate_by_name=True,
     )
 
     # --- API football-data.org ---
@@ -32,10 +38,18 @@ class Settings(BaseSettings):
 
     # --- Camadas de dados ---
     raw_dir: Path = PROJECT_ROOT / "data" / "raw"
-    warehouse_path: Path = PROJECT_ROOT / "data" / "warehouse" / "brasileirao.duckdb"
+    # DUCKDB_PATH e a mesma variavel lida pelo profiles.yml do dbt: um unico
+    # ajuste aponta o Python e o dbt para o mesmo warehouse.
+    warehouse_path: Path = Field(
+        default=PROJECT_ROOT / "data" / "warehouse" / "brasileirao.duckdb",
+        validation_alias="DUCKDB_PATH",
+    )
 
     # --- ML ---
-    mlflow_tracking_uri: str = f"file:///{(PROJECT_ROOT / 'mlruns').as_posix()}"
+    # Backend SQLite: o MLflow 3.x deprecou o file store, e um backend de banco
+    # e pre-requisito para o model registry.
+    mlflow_tracking_uri: str = f"sqlite:///{(PROJECT_ROOT / 'mlruns' / 'mlflow.db').as_posix()}"
+    mlflow_artifact_root: Path = PROJECT_ROOT / "mlruns" / "artifacts"
     mlflow_experiment_name: str = "brasileirao-match-outcome"
     focus_team: str = "Coritiba Foot Ball Club"
 
@@ -43,6 +57,7 @@ class Settings(BaseSettings):
         """Cria os diretorios de dados caso ainda nao existam."""
         self.raw_dir.mkdir(parents=True, exist_ok=True)
         self.warehouse_path.parent.mkdir(parents=True, exist_ok=True)
+        self.mlflow_artifact_root.mkdir(parents=True, exist_ok=True)
 
 
 settings = Settings()

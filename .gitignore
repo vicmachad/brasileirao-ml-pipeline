@@ -235,3 +235,6 @@ dbt/.user.yml
 # MLflow
 mlruns/
 mlartifacts/
+
+# uv
+.venv/

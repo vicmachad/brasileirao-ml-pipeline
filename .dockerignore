@@ -1,0 +1,18 @@
+.git
+.github
+.venv
+.env
+.pytest_cache
+.ruff_cache
+__pycache__
+*.pyc
+
+# Estado local: reconstruido dentro do container, montado por volume.
+data
+mlruns
+mlartifacts
+notebooks
+dbt/target
+dbt/dbt_packages
+dbt/logs
+dbt/.user.yml

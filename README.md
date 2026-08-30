@@ -42,9 +42,13 @@ football-data.org (API pública, competição BSA)
 └─────────┬─────────┘
           ▼
 ┌───────────────────┐
-│ 5. CI/CD          │  GitHub Actions: ruff + pytest + dbt build/test em cada PR
-└───────────────────┘
+│ 5. CI/CD          │  GitHub Actions: ruff + pytest + dbt build/test + build
+└───────────────────┘  da imagem Docker, em cada PR
 ```
+
+Tudo roda de duas formas equivalentes: **local com [uv](https://docs.astral.sh/uv/)**
+ou **em containers com Docker Compose**. As duas partem do mesmo `uv.lock`, então o
+ambiente é idêntico.
 
 ### Camadas dbt
 
@@ -85,48 +89,90 @@ remoto é uma variável de ambiente.
 Limite de 10 req/min — a ingestão respeita isso com throttle e grava a resposta crua
 antes de qualquer parsing, para que a raw layer seja sempre reprocessável.
 
+**dbt fixado na série 1.12** (`dbt-core~=1.12.0`, `dbt-duckdb~=1.11.0`). O pin `~=` deixa
+patches entrarem e exige decisão explícita para mudar de minor. Ficar numa série
+suportada importa: a 1.8 já está depreciada e emite aviso a cada comando. O
+`package-lock.yml` do dbt também é commitado, fixando a versão do `dbt_utils`.
+
+**uv para dependências, com lock commitado.** `uv.lock` fixa a árvore inteira, e o CI
+roda `uv sync --frozen` — se o lock divergir do `pyproject.toml`, o build falha em vez
+de resolver versões silenciosamente. O uv também provisiona o próprio Python 3.11, o
+que elimina a divergência entre a máquina local, o container e o CI.
+
+**Docker com build em dois estágios.** O estágio de build usa a imagem oficial do uv e
+monta `uv.lock`/`pyproject.toml` como bind mount, então a camada de dependências só
+invalida quando o lock muda. O estágio final carrega apenas o runtime e a `.venv`
+pronta, roda como usuário não-root, e recebe `data/` e `mlruns/` como bind mounts — o
+estado do pipeline sobrevive ao container e continua inspecionável do host.
+
+**MLflow com backend SQLite, não file store.** O MLflow 3.x colocou o backend de
+arquivo (`./mlruns`) em modo de manutenção e recusa iniciar sobre ele. SQLite não exige
+serviço externo e é pré-requisito do model registry.
+
 ---
 
-## Como rodar localmente
+## Como rodar
 
-Pré-requisitos: Python 3.10+ e um token gratuito da
-[football-data.org](https://www.football-data.org/client/register).
+Em ambos os caminhos, comece pelo token gratuito da
+[football-data.org](https://www.football-data.org/client/register):
 
 ```bash
 git clone https://github.com/vicmachad/brasileirao-ml-pipeline.git
 cd brasileirao-ml-pipeline
-
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-
-make install                     # instala o pacote + dbt + ferramentas de dev
-
-cp .env.example .env             # e preencha FOOTBALL_DATA_API_TOKEN
-python -m brasileirao.cli config # confere a configuração efetiva
+cp .env.example .env      # e preencha FOOTBALL_DATA_API_TOKEN
 ```
 
-Pipeline completo:
+### Opção A — local com uv
+
+Único pré-requisito é o [uv](https://docs.astral.sh/uv/getting-started/installation/);
+ele baixa o Python 3.11 e monta a `.venv` sozinho.
 
 ```bash
-make pipeline     # ingest → dbt build → train
+make install              # uv sync (respeita o uv.lock)
+uv run brasileirao config # confere a configuração efetiva
+
+make pipeline             # ingest → dbt build → train
 ```
 
 Ou passo a passo:
 
 ```bash
-make ingest       # API → data/raw/
-make dbt-deps     # instala pacotes dbt (uma vez)
-make dbt-build    # constrói modelos e roda os testes
-make train        # treina o modelo e registra o run no MLflow
-
-mlflow ui         # abre em http://localhost:5000
+make ingest               # API → data/raw/
+make dbt-deps             # instala pacotes dbt (uma vez)
+make dbt-build            # constrói modelos e roda os testes
+make train                # treina e registra o run no MLflow
 ```
 
-Qualidade:
+### Opção B — Docker Compose
+
+Três serviços sobre a mesma imagem: `pipeline` (CLI Python), `dbt` e `mlflow` (UI).
 
 ```bash
-make lint         # ruff check + format
-make test         # pytest
+make docker-build                        # docker compose build
+
+docker compose run --rm pipeline ingest  # camada 1
+docker compose run --rm dbt build        # camadas 2 e 3 (+ dbt tests)
+docker compose run --rm pipeline train   # camada 4
+
+make docker-pipeline                     # ou os três de uma vez
+```
+
+MLflow UI em [http://localhost:5000](http://localhost:5000):
+
+```bash
+make mlflow-up
+make mlflow-down
+```
+
+`data/` e `mlruns/` são bind mounts — o resultado de um run em container fica
+disponível no host, e vice-versa.
+
+### Qualidade
+
+```bash
+make lint     # ruff check + format --check
+make format   # aplica as correções
+make test     # pytest
 ```
 
 ---
@@ -149,17 +195,21 @@ make test         # pytest
 ├── data/
 │   ├── raw/                # JSON bruto da API (gitignored)
 │   └── warehouse/          # arquivo DuckDB (gitignored)
+├── mlruns/                 # backend SQLite + artefatos MLflow (gitignored)
 ├── tests/                  # pytest
 ├── .github/workflows/ci.yml
-├── Makefile
-└── pyproject.toml
+├── Dockerfile              # build em dois estágios com uv
+├── docker-compose.yml      # serviços pipeline / dbt / mlflow
+├── Makefile                # atalhos local (uv) e Docker
+├── pyproject.toml
+└── uv.lock                 # árvore de dependências fixada (commitado)
 ```
 
 ---
 
 ## Roadmap
 
-- [x] **0.** Scaffold: estrutura, configuração, dbt, CI, README
+- [x] **0.** Scaffold: estrutura, uv, dbt, Docker Compose, CI, README
 - [ ] **1.** Ingestão: cliente football-data.org com throttle e raw layer particionada
 - [ ] **2.** dbt: staging, intermediate, marts + testes
 - [ ] **3.** Feature store: `feature_store_matches` com corte temporal validado
