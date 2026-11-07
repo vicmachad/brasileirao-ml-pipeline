@@ -1,0 +1,69 @@
+match_date,matchday,home_team_name,away_team_name,home_score,away_score,outcome,predicted_outcome,correct
+2026-09-20 00:00:00-03:00,28,São Paulo FC,SC Internacional,1,0,home_win,home_win,True
+2026-09-20 14:00:00-03:00,28,Grêmio FBPA,SE Palmeiras,0,0,draw,draw,True
+2026-09-20 19:00:00-03:00,28,SC Corinthians Paulista,Fluminense FC,1,3,away_win,away_win,True
+2026-09-20 19:00:00-03:00,28,EC Vitória,Cruzeiro EC,1,3,away_win,home_win,False
+2026-09-20 21:30:00-03:00,28,CR Flamengo,RB Bragantino,2,1,home_win,away_win,False
+2026-09-20 22:30:00-03:00,28,CA Paranaense,EC Bahia,2,1,home_win,draw,False
+2026-10-02 23:00:00-03:00,21,São Paulo FC,Santos FC,1,2,away_win,draw,False
+2026-10-03 21:30:00-03:00,21,CA Mineiro,RB Bragantino,1,0,home_win,home_win,True
+2026-10-07 22:30:00-03:00,29,RB Bragantino,Mirassol FC,1,1,draw,away_win,False
+2026-10-07 22:30:00-03:00,29,SC Internacional,SC Corinthians Paulista,2,1,home_win,draw,False
+2026-10-07 22:30:00-03:00,29,Clube do Remo,Grêmio FBPA,1,1,draw,away_win,False
+2026-10-07 23:00:00-03:00,29,EC Vitória,Chapecoense AF,4,0,home_win,home_win,True
+2026-10-07 23:30:00-03:00,29,Botafogo FR,CR Vasco da Gama,1,2,away_win,draw,False
+2026-10-08 00:30:00-03:00,29,Cruzeiro EC,São Paulo FC,2,0,home_win,away_win,False
+2026-10-08 22:30:00-03:00,29,Santos FC,CR Flamengo,2,2,draw,draw,True
+2026-10-08 23:00:00-03:00,29,CA Paranaense,CA Mineiro,2,2,draw,away_win,False
+2026-10-09 00:30:00-03:00,29,Fluminense FC,Coritiba FBC,4,0,home_win,draw,False
+2026-10-09 00:30:00-03:00,29,SE Palmeiras,EC Bahia,1,0,home_win,home_win,True
+2026-10-10 21:00:00-03:00,30,CR Vasco da Gama,Clube do Remo,0,0,draw,draw,True
+2026-10-11 00:00:00-03:00,30,São Paulo FC,EC Vitória,2,1,home_win,home_win,True
+2026-10-11 19:00:00-03:00,30,CA Mineiro,Santos FC,2,1,home_win,home_win,True
+2026-10-11 20:30:00-03:00,30,Grêmio FBPA,SC Internacional,1,1,draw,away_win,False
+2026-10-11 20:30:00-03:00,30,SE Palmeiras,SC Corinthians Paulista,4,1,home_win,draw,False
+2026-10-11 20:30:00-03:00,30,CR Flamengo,Fluminense FC,1,0,home_win,home_win,True
+2026-10-11 22:30:00-03:00,30,EC Bahia,Mirassol FC,1,0,home_win,away_win,False
+2026-10-12 19:00:00-03:00,30,Coritiba FBC,Botafogo FR,1,1,draw,draw,True
+2026-10-12 22:30:00-03:00,30,Chapecoense AF,CA Paranaense,1,4,away_win,draw,False
+2026-10-13 00:00:00-03:00,30,RB Bragantino,Cruzeiro EC,4,2,home_win,away_win,False
+2026-10-16 23:00:00-03:00,31,Mirassol FC,SC Internacional,2,0,home_win,draw,False
+2026-10-17 21:00:00-03:00,31,Botafogo FR,Chapecoense AF,1,0,home_win,home_win,True
+2026-10-17 21:30:00-03:00,31,CA Mineiro,Coritiba FBC,1,0,home_win,home_win,True
+2026-10-17 22:30:00-03:00,31,CA Paranaense,SE Palmeiras,0,2,away_win,away_win,True
+2026-10-18 00:00:00-03:00,31,São Paulo FC,CR Vasco da Gama,1,0,home_win,home_win,True
+2026-10-18 19:00:00-03:00,31,Fluminense FC,Santos FC,1,2,away_win,home_win,False
+2026-10-18 19:00:00-03:00,31,Grêmio FBPA,Cruzeiro EC,2,4,away_win,draw,False
+2026-10-18 21:30:00-03:00,31,EC Bahia,CR Flamengo,0,3,away_win,draw,False
+2026-10-18 22:30:00-03:00,31,Clube do Remo,RB Bragantino,1,1,draw,away_win,False
+2026-10-19 23:00:00-03:00,31,SC Corinthians Paulista,EC Vitória,1,1,draw,away_win,False
+2026-10-23 23:00:00-03:00,32,Cruzeiro EC,Clube do Remo,1,0,home_win,away_win,False
+2026-10-24 19:30:00-03:00,32,EC Vitória,CA Paranaense,1,1,draw,draw,True
+2026-10-24 19:30:00-03:00,32,Mirassol FC,São Paulo FC,1,1,draw,home_win,False
+2026-10-24 19:30:00-03:00,32,SC Internacional,Botafogo FR,3,0,home_win,home_win,True
+2026-10-24 21:30:00-03:00,32,CR Vasco da Gama,SC Corinthians Paulista,3,2,home_win,draw,False
+2026-10-24 21:30:00-03:00,32,SE Palmeiras,RB Bragantino,2,0,home_win,draw,False
+2026-10-24 22:30:00-03:00,32,Chapecoense AF,Fluminense FC,2,1,home_win,away_win,False
+2026-10-25 01:00:00-03:00,32,Santos FC,EC Bahia,1,1,draw,home_win,False
+2026-10-26 22:30:00-03:00,32,Coritiba FBC,Grêmio FBPA,0,1,away_win,away_win,True
+2026-10-26 23:00:00-03:00,32,CR Flamengo,CA Mineiro,3,2,home_win,away_win,False
+2026-10-28 22:30:00-03:00,33,Santos FC,SE Palmeiras,0,0,draw,away_win,False
+2026-10-28 22:30:00-03:00,33,RB Bragantino,Chapecoense AF,3,0,home_win,home_win,True
+2026-10-28 22:30:00-03:00,33,Fluminense FC,SC Internacional,2,1,home_win,home_win,True
+2026-10-29 00:30:00-03:00,33,Clube do Remo,Botafogo FR,2,1,home_win,draw,False
+2026-10-29 00:30:00-03:00,33,EC Bahia,São Paulo FC,3,2,home_win,home_win,True
+2026-10-29 22:30:00-03:00,33,CA Mineiro,Cruzeiro EC,0,1,away_win,home_win,False
+2026-10-29 23:00:00-03:00,33,CR Vasco da Gama,CR Flamengo,1,4,away_win,draw,False
+2026-10-30 00:30:00-03:00,33,Grêmio FBPA,CA Paranaense,2,0,home_win,home_win,True
+2026-10-30 23:00:00-03:00,33,SC Corinthians Paulista,Mirassol FC,2,0,home_win,away_win,False
+2026-10-31 19:00:00-03:00,33,Coritiba FBC,EC Vitória,2,0,home_win,away_win,False
+2026-11-02 23:00:00-03:00,34,RB Bragantino,Santos FC,2,1,home_win,home_win,True
+2026-11-03 22:30:00-03:00,34,Chapecoense AF,Mirassol FC,1,2,away_win,draw,False
+2026-11-04 00:30:00-03:00,34,SC Internacional,Coritiba FBC,1,0,home_win,home_win,True
+2026-11-04 22:30:00-03:00,34,CR Flamengo,Grêmio FBPA,3,1,home_win,away_win,False
+2026-11-04 22:30:00-03:00,34,CA Paranaense,CR Vasco da Gama,1,3,away_win,home_win,False
+2026-11-05 00:30:00-03:00,34,Botafogo FR,CA Mineiro,1,0,home_win,away_win,False
+2026-11-05 00:30:00-03:00,34,São Paulo FC,SC Corinthians Paulista,0,0,draw,home_win,False
+2026-11-05 22:30:00-03:00,34,SE Palmeiras,Clube do Remo,6,1,home_win,away_win,False
+2026-11-06 00:30:00-03:00,34,Cruzeiro EC,EC Bahia,3,2,home_win,draw,False
+2026-11-06 23:00:00-03:00,34,EC Vitória,Fluminense FC,0,3,away_win,home_win,False

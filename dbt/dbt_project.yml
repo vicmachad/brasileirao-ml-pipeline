@@ -17,6 +17,7 @@ clean-targets:
 vars:
   # Diretorio da raw layer, resolvido a partir da raiz do repo.
   raw_dir: "../data/raw"
+  raw_glob: "../data/raw/competition=*/date=*/*.json"
   # Janela usada nas features de forma recente.
   form_window: 5
 
@@ -24,7 +25,7 @@ models:
   brasileirao:
     +materialized: table
     staging:
-      +materialized: view
+      +materialized: table
       +schema: staging
     intermediate:
       +materialized: table
@@ -32,3 +33,8 @@ models:
     marts:
       +materialized: table
       +schema: marts
+
+seeds:
+  brasileirao:
+    matches_fixture:
+      +enabled: "{{ target.name == 'ci' }}"

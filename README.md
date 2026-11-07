@@ -9,8 +9,9 @@ O projeto existe para exercitar, num escopo pequeno e auditável, as práticas q
 separam um notebook de um sistema: raw layer imutável, transformações versionadas e
 testadas em dbt, feature store sem vazamento temporal, experimentos rastreados e CI.
 
-> Status: scaffold pronto. As camadas estão sendo implementadas uma a uma — veja o
-> [Roadmap](#roadmap).
+> Status: ingestão, transformações dbt, feature store e treino inicial estão
+> implementados. `make pipeline` consulta a API e precisa de `FOOTBALL_DATA_API_TOKEN`
+> configurado no `.env`.
 
 ---
 
@@ -54,7 +55,7 @@ ambiente é idêntico.
 
 | Camada         | Papel                                                                 |
 | -------------- | --------------------------------------------------------------------- |
-| `staging`      | 1:1 com a fonte. Renomeia, tipa e desaninha o JSON da API. Views.      |
+| `staging`      | Tipagem e deduplicação dos snapshots JSON da API. Tabelas dbt.      |
 | `intermediate` | Lógica reutilizável: partidas em formato *long* (uma linha por time por jogo), forma recente, mando de campo, confrontos diretos. |
 | `marts`        | `fct_matches` (grão: partida) e `feature_store_matches` (grão: partida, pronto para o modelo). |
 
@@ -143,6 +144,10 @@ make dbt-build            # constrói modelos e roda os testes
 make train                # treina e registra o run no MLflow
 ```
 
+Para validar as transformações sem consultar a API, use os dados determinísticos
+do CI: `make dbt-build DBT_TARGET=ci`. O treino usa partidas concluídas do warehouse
+gerado pelo dbt e faz uma validação temporal 80/20.
+
 ### Opção B — Docker Compose
 
 Três serviços sobre a mesma imagem: `pipeline` (CLI Python), `dbt` e `mlflow` (UI).
@@ -210,11 +215,11 @@ make test     # pytest
 ## Roadmap
 
 - [x] **0.** Scaffold: estrutura, uv, dbt, Docker Compose, CI, README
-- [ ] **1.** Ingestão: cliente football-data.org com throttle e raw layer particionada
-- [ ] **2.** dbt: staging, intermediate, marts + testes
-- [ ] **3.** Feature store: `feature_store_matches` com corte temporal validado
-- [ ] **4.** ML: baseline + modelo, avaliação com split temporal, MLflow
-- [ ] **5.** CI: seeds de fixture para `dbt build` reprodutível no CI
+- [x] **1.** Ingestão: cliente football-data.org e raw layer particionada
+- [x] **2.** dbt: staging, intermediate, marts + testes
+- [x] **3.** Feature store: `feature_store_matches` com corte temporal validado
+- [x] **4.** ML: modelo inicial, avaliação com split temporal, MLflow
+- [x] **5.** CI: seed de fixture para `dbt build` reprodutível no CI
 - [ ] **6.** README final com resultados, matriz de confusão e leitura do recorte Coritiba
 
 ---

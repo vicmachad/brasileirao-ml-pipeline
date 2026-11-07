@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: stg_matches
+    description: Partidas tipadas da API ou do fixture de CI.
+    columns:
+      - name: match_id
+        data_tests:
+          - not_null
+          - unique
+      - name: match_date
+        data_tests:
+          - not_null
+      - name: home_team_id
+        data_tests:
+          - not_null
+      - name: away_team_id
+        data_tests:
+          - not_null

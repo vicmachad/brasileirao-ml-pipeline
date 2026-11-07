@@ -1,7 +1,8 @@
 .PHONY: install lint format test ingest dbt-deps dbt-build dbt-test train pipeline \
         docker-build docker-pipeline docker-dbt mlflow-up mlflow-down clean
 
-export DBT_PROFILES_DIR := dbt
+export DBT_PROFILES_DIR := $(CURDIR)/dbt
+DBT_TARGET ?= dev
 
 # --- Local (uv) ---------------------------------------------------------
 
@@ -26,10 +27,10 @@ dbt-deps:
 	cd dbt && uv run dbt deps
 
 dbt-build:
-	cd dbt && uv run dbt build
+	cd dbt && uv run dbt build --target $(DBT_TARGET)
 
 dbt-test:
-	cd dbt && uv run dbt test
+	cd dbt && uv run dbt test --target $(DBT_TARGET)
 
 train:
 	uv run brasileirao train
@@ -40,17 +41,17 @@ pipeline: ingest dbt-build train
 # --- Docker -------------------------------------------------------------
 
 docker-build:
-	docker compose build
+	docker compose build pipeline
 
 docker-pipeline: docker-build
 	docker compose run --rm pipeline ingest
 	docker compose run --rm dbt build
 	docker compose run --rm pipeline train
 
-docker-dbt:
+docker-dbt: docker-build
 	docker compose run --rm dbt build
 
-mlflow-up:
+mlflow-up: docker-build
 	docker compose up -d mlflow
 
 mlflow-down:

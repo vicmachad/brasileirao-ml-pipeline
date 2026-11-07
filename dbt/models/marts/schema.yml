@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: fct_matches
+    columns:
+      - name: match_id
+        data_tests:
+          - not_null
+          - unique
+      - name: outcome
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['home_win', 'draw', 'away_win']
+  - name: feature_store_matches
+    columns:
+      - name: match_id
+        data_tests:
+          - not_null
+          - unique
+      - name: outcome
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['home_win', 'draw', 'away_win']

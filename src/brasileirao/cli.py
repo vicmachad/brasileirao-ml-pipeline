@@ -1,21 +1,24 @@
 """Ponto de entrada unico do pipeline.
 
-Cada camada expoe um subcomando. Por enquanto apenas `config` esta
-implementado; ingestao, treino e predicao entram nas proximas etapas.
+Cada camada expoe um subcomando. `config` inspeciona a configuracao e `ingest`
+baixa a resposta bruta da API.
 """
 
 from __future__ import annotations
 
+import requests
 import typer
 
 from brasileirao.config import settings
+from brasileirao.ingestion import fetch_competition_matches, write_raw_snapshot
+from brasileirao.ml import TrainingError, run_training
 
 app = typer.Typer(help="Pipeline Brasileirao: ingestao -> dbt -> features -> ML.")
 
 
 @app.callback()
 def main() -> None:
-    """Mantem o CLI como multi-comando enquanto as demais camadas nao existem."""
+    """Mantem o CLI como multi-comando."""
 
 
 @app.command()
@@ -29,6 +32,44 @@ def config() -> None:
     typer.echo(f"mlflow_tracking_uri   : {settings.mlflow_tracking_uri}")
     typer.echo(f"mlflow_artifact_root  : {settings.mlflow_artifact_root}")
     typer.echo(f"focus_team            : {settings.focus_team}")
+
+
+@app.command()
+def ingest() -> None:
+    """Baixa partidas da API e salva a resposta original em data/raw/."""
+    try:
+        content = fetch_competition_matches(settings)
+        path = write_raw_snapshot(settings.raw_dir, settings.competition_code, content)
+    except ValueError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    except requests.RequestException as exc:
+        typer.echo(f"Falha ao consultar football-data.org: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except OSError as exc:
+        typer.echo(f"Falha ao gravar resposta bruta: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"Resposta bruta salva em: {path}")
+
+
+@app.command()
+def train() -> None:
+    """Treina e registra um modelo usando a feature store criada pelo dbt."""
+    try:
+        metrics, run_id = run_training(settings)
+    except TrainingError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    except OSError as exc:
+        typer.echo(f"Falha ao preparar o armazenamento do MLflow: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"Modelo registrado no MLflow (run_id={run_id})")
+    typer.echo(f"Acuracia temporal: {metrics['accuracy']:.3f}")
+    typer.echo(
+        f"Partidas: treino={int(metrics['train_matches'])}, teste={int(metrics['test_matches'])}"
+    )
 
 
 if __name__ == "__main__":

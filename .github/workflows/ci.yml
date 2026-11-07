@@ -6,7 +6,7 @@ on:
   pull_request:
 
 env:
-  DBT_PROFILES_DIR: dbt
+  DBT_PROFILES_DIR: ${{ github.workspace }}/dbt
 
 jobs:
   quality:
