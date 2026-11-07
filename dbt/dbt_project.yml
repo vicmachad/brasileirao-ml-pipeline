@@ -37,4 +37,4 @@ models:
 seeds:
   brasileirao:
     matches_fixture:
-      +enabled: "{{ target.name == 'ci' }}"
+      +enabled: "{{ target.name in ['ci', 'seed'] }}"

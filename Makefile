@@ -4,6 +4,7 @@
 
 export DBT_PROFILES_DIR := $(CURDIR)/dbt
 DBT_TARGET ?= dev
+REPROCESS ?= 0
 
 # --- Local (uv) ---------------------------------------------------------
 
@@ -39,8 +40,17 @@ dbt-test:
 train:
 	uv run brasileirao train
 
-# Pipeline completo: raw -> dbt -> feature store -> modelo.
-pipeline: ingest dbt-build train
+# Por padrão o pipeline usa a seed local. REPROCESS=1 consulta a API e usa a raw layer.
+ifeq ($(REPROCESS),1)
+pipeline: ingest
+PIPELINE_DBT_TARGET := dev
+else
+PIPELINE_DBT_TARGET := seed
+endif
+
+pipeline:
+	$(MAKE) dbt-build DBT_TARGET=$(PIPELINE_DBT_TARGET)
+	$(MAKE) train
 
 databricks-ingest:
 	uv run --extra databricks brasileirao ingest-databricks

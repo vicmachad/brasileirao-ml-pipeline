@@ -36,6 +36,7 @@ dev = [
     "pytest-cov>=5.0",
     "ruff>=0.5",
     "responses>=0.25",
+    "databricks-sql-connector>=4.2.2,<4.4.1",
 ]
 
 [project.scripts]

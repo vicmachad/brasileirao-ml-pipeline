@@ -1,4 +1,4 @@
-{% if target.name == "ci" %}
+{% if target.name in ["ci", "seed"] %}
 
 select
     cast(match_id as bigint) as match_id,

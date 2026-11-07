@@ -10,8 +10,8 @@ separam um notebook de um sistema: raw layer imutável, transformações version
 testadas em dbt, feature store sem vazamento temporal, experimentos rastreados e CI.
 
 > Status: ingestão, transformações dbt, feature store e treino inicial estão
-> implementados. `make pipeline` consulta a API e precisa de `FOOTBALL_DATA_API_TOKEN`
-> configurado no `.env`.
+> implementados. `make pipeline` usa a seed local; para consultar novamente a API,
+> use `make pipeline REPROCESS=1` e configure `FOOTBALL_DATA_API_TOKEN` no `.env`.
 
 ---
 
@@ -132,7 +132,8 @@ ele baixa o Python 3.11 e monta a `.venv` sozinho.
 make install              # uv sync (respeita o uv.lock)
 uv run brasileirao config # confere a configuração efetiva
 
-make pipeline             # ingest → dbt build → train
+make pipeline             # seed local → dbt build → train
+make pipeline REPROCESS=1 # API → dbt build → train (reprocessa os dados)
 ```
 
 Ou passo a passo:
@@ -145,7 +146,8 @@ make train                # treina e registra o run no MLflow
 ```
 
 Para validar as transformações sem consultar a API, use os dados determinísticos
-do CI: `make dbt-build DBT_TARGET=ci`. O treino usa partidas concluídas do warehouse
+do CI: `make dbt-build DBT_TARGET=ci`. O alvo padrão `seed` usa a mesma seed local
+no warehouse de desenvolvimento. O treino usa partidas concluídas do warehouse
 gerado pelo dbt e faz uma validação temporal 80/20.
 
 ### Databricks SQL Warehouse (opcional)
