@@ -1,0 +1,8 @@
+version: 2
+
+sources:
+  - name: databricks_raw
+    database: "{{ env_var('DATABRICKS_CATALOG', 'workspace') }}"
+    schema: "{{ env_var('DATABRICKS_RAW_SCHEMA', 'brasileirao_raw') }}"
+    tables:
+      - name: raw_matches

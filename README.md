@@ -148,6 +148,25 @@ Para validar as transformações sem consultar a API, use os dados determinísti
 do CI: `make dbt-build DBT_TARGET=ci`. O treino usa partidas concluídas do warehouse
 gerado pelo dbt e faz uma validação temporal 80/20.
 
+### Databricks SQL Warehouse (opcional)
+
+O DuckDB continua sendo o padrão local. Para executar ingestão, dbt e treino
+usando um Databricks SQL Warehouse:
+
+1. Instale o adapter opcional: `make install-databricks`.
+2. No `.env`, configure `DATABRICKS_HOST`, `DATABRICKS_HTTP_PATH` e
+   `DATABRICKS_TOKEN`. O `HTTP_PATH` é o valor exibido em **Connection details**,
+   não a URL da página do Warehouse (para SQL Warehouse, o formato usual é
+   `/sql/1.0/warehouses/<warehouse-id>`). Nunca versione nem compartilhe o token.
+3. Configure `DATABRICKS_CATALOG` e, se necessário, ajuste
+   `DATABRICKS_SCHEMA`/`DATABRICKS_RAW_SCHEMA`.
+4. Valide o acesso com `make databricks-debug`; depois execute
+   `make databricks-pipeline`.
+
+A ingestão mantém o snapshot JSON local e sincroniza as partidas numa tabela Delta
+`raw_matches`; o dbt constrói staging, marts e feature store no Databricks. O treino
+lê a feature store remota e continua registrando o modelo no MLflow local.
+
 ### Opção B — Docker Compose
 
 Três serviços sobre a mesma imagem: `pipeline` (CLI Python), `dbt` e `mlflow` (UI).

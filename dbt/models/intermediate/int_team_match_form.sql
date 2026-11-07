@@ -39,15 +39,22 @@ team_matches as (
 form as (
     select
         *,
-        avg(points) over prior_matches as avg_points_prior,
-        avg(goals_for) over prior_matches as avg_goals_for_prior,
-        avg(goals_against) over prior_matches as avg_goals_against_prior
+        avg(points) over (
+            partition by team_id
+            order by match_date, match_id
+            rows between {{ var("form_window") }} preceding and 1 preceding
+        ) as avg_points_prior,
+        avg(goals_for) over (
+            partition by team_id
+            order by match_date, match_id
+            rows between {{ var("form_window") }} preceding and 1 preceding
+        ) as avg_goals_for_prior,
+        avg(goals_against) over (
+            partition by team_id
+            order by match_date, match_id
+            rows between {{ var("form_window") }} preceding and 1 preceding
+        ) as avg_goals_against_prior
     from team_matches
-    window prior_matches as (
-        partition by team_id
-        order by match_date, match_id
-        rows between {{ var("form_window") }} preceding and 1 preceding
-    )
 )
 
 select *

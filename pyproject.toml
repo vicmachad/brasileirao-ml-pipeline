@@ -41,6 +41,12 @@ dev = [
 [project.scripts]
 brasileirao = "brasileirao.cli:app"
 
+[project.optional-dependencies]
+databricks = [
+    "databricks-sql-connector>=4.2.2,<4.4.1",
+    "dbt-databricks>=1.13.0,<1.14.0",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/brasileirao"]
 

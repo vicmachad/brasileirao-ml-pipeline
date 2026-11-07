@@ -1,3 +1,4 @@
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -7,7 +8,11 @@ from typer.testing import CliRunner
 
 from brasileirao.cli import app
 from brasileirao.config import Settings
-from brasileirao.ingestion import fetch_competition_matches, write_raw_snapshot
+from brasileirao.ingestion import (
+    fetch_competition_matches,
+    upload_matches_to_databricks,
+    write_raw_snapshot,
+)
 
 
 def test_fetch_competition_matches_uses_configured_api(monkeypatch):
@@ -64,6 +69,94 @@ def test_write_raw_snapshot_never_overwrites_existing_file(tmp_path):
 def test_write_raw_snapshot_rejects_unsafe_competition_code(tmp_path):
     with pytest.raises(ValueError, match="Codigo de competicao invalido"):
         write_raw_snapshot(tmp_path, "../elsewhere", b"data")
+
+
+def test_upload_matches_to_databricks_merges_normalized_rows(monkeypatch):
+    from databricks import sql
+
+    calls = {"queries": [], "records": [], "connection": {}}
+
+    class FakeCursor:
+        description = None
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            return False
+
+        def execute(self, query):
+            calls["queries"].append(query)
+
+        def executemany(self, query, records):
+            calls["queries"].append(query)
+            calls["records"].extend(records)
+
+    class FakeConnection:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_):
+            return False
+
+        def cursor(self):
+            return FakeCursor()
+
+    def fake_connect(**kwargs):
+        calls["connection"].update(kwargs)
+        return FakeConnection()
+
+    monkeypatch.setattr(sql, "connect", fake_connect)
+    settings = Settings(
+        databricks_host="https://workspace.example/",
+        databricks_http_path="/sql/1.0/warehouses/warehouse-id",
+        databricks_token="test-token",
+        databricks_catalog="workspace",
+        databricks_raw_schema="raw",
+    )
+    payload = {
+        "matches": [
+            {
+                "id": 42,
+                "utcDate": "2026-11-07T18:30:00Z",
+                "status": "FINISHED",
+                "matchday": 1,
+                "homeTeam": {"id": 10, "name": "Coritiba"},
+                "awayTeam": {"id": 20, "name": "Santos"},
+                "score": {"fullTime": {"home": 2, "away": 1}},
+            }
+        ]
+    }
+
+    assert upload_matches_to_databricks(json.dumps(payload).encode(), settings) == 1
+    assert calls["connection"] == {
+        "server_hostname": "workspace.example",
+        "http_path": "/sql/1.0/warehouses/warehouse-id",
+        "access_token": "test-token",
+    }
+    assert calls["records"][0] == (
+        42,
+        datetime(2026, 11, 7, 18, 30),
+        "FINISHED",
+        1,
+        10,
+        "Coritiba",
+        20,
+        "Santos",
+        2,
+        1,
+    )
+    assert any("MERGE INTO" in query for query in calls["queries"])
+
+
+def test_upload_matches_to_databricks_requires_credentials():
+    settings = Settings(
+        databricks_host="",
+        databricks_http_path="",
+        databricks_token="",
+    )
+    with pytest.raises(ValueError, match="DATABRICKS_HOST"):
+        upload_matches_to_databricks(b'{"matches":[]}', settings)
 
 
 def test_cli_ingest_reports_missing_token(monkeypatch, tmp_path: Path):

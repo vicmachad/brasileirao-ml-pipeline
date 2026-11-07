@@ -13,6 +13,21 @@ select
     cast(away_score as integer) as away_score
 from {{ ref("matches_fixture") }}
 
+{% elif target.type == "databricks" %}
+
+select
+    cast(match_id as bigint) as match_id,
+    cast(match_date as timestamp) as match_date,
+    status,
+    cast(matchday as integer) as matchday,
+    cast(home_team_id as bigint) as home_team_id,
+    home_team_name,
+    cast(away_team_id as bigint) as away_team_id,
+    away_team_name,
+    cast(home_score as integer) as home_score,
+    cast(away_score as integer) as away_score
+from {{ source("databricks_raw", "raw_matches") }}
+
 {% else %}
 
 with raw_matches as (

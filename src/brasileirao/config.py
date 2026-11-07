@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -43,6 +44,19 @@ class Settings(BaseSettings):
     warehouse_path: Path = Field(
         default=PROJECT_ROOT / "data" / "warehouse" / "brasileirao.duckdb",
         validation_alias="DUCKDB_PATH",
+    )
+    databricks_host: str = Field(default="", validation_alias="DATABRICKS_HOST")
+    databricks_http_path: str = Field(default="", validation_alias="DATABRICKS_HTTP_PATH")
+    databricks_token: str = Field(default="", validation_alias="DATABRICKS_TOKEN")
+    databricks_catalog: str = Field(default="workspace", validation_alias="DATABRICKS_CATALOG")
+    databricks_schema: str = Field(default="brasileirao", validation_alias="DATABRICKS_SCHEMA")
+    databricks_raw_schema: str = Field(
+        default="brasileirao_raw",
+        validation_alias="DATABRICKS_RAW_SCHEMA",
+    )
+    warehouse_backend: Literal["duckdb", "databricks"] = Field(
+        default="duckdb",
+        validation_alias="WAREHOUSE_BACKEND",
     )
 
     # --- ML ---

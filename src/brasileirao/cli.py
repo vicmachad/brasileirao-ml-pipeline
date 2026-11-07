@@ -10,7 +10,13 @@ import requests
 import typer
 
 from brasileirao.config import settings
-from brasileirao.ingestion import fetch_competition_matches, write_raw_snapshot
+from brasileirao.ingestion import (
+    DatabricksIngestionError,
+    fetch_competition_matches,
+    upload_matches_to_databricks,
+    validate_databricks_config,
+    write_raw_snapshot,
+)
 from brasileirao.ml import TrainingError, run_training
 
 app = typer.Typer(help="Pipeline Brasileirao: ingestao -> dbt -> features -> ML.")
@@ -51,6 +57,34 @@ def ingest() -> None:
         raise typer.Exit(code=1) from exc
 
     typer.echo(f"Resposta bruta salva em: {path}")
+
+
+@app.command("ingest-databricks")
+def ingest_databricks() -> None:
+    """Salva o snapshot local e sincroniza partidas para uma tabela Delta."""
+    try:
+        validate_databricks_config(settings)
+        content = fetch_competition_matches(settings)
+        path = write_raw_snapshot(settings.raw_dir, settings.competition_code, content)
+        row_count = upload_matches_to_databricks(content, settings)
+    except ValueError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+    except requests.RequestException as exc:
+        typer.echo(f"Falha ao consultar football-data.org: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except OSError as exc:
+        typer.echo(f"Falha ao gravar resposta bruta: {exc}", err=True)
+        raise typer.Exit(code=1) from exc
+    except DatabricksIngestionError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1) from exc
+
+    typer.echo(f"Snapshot local salvo em: {path}")
+    typer.echo(
+        f"{row_count} partidas sincronizadas em "
+        f"{settings.databricks_catalog}.{settings.databricks_raw_schema}.raw_matches"
+    )
 
 
 @app.command()

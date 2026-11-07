@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+import re
 
 import duckdb
 import mlflow
@@ -60,18 +60,61 @@ def train_temporal_model(matches: pd.DataFrame) -> tuple[RandomForestClassifier,
     }
 
 
-def load_feature_store(warehouse_path: Path) -> pd.DataFrame:
-    """Lê as features materializadas pelo dbt do warehouse configurado."""
-    if not warehouse_path.is_file():
+def load_feature_store(settings: Settings) -> pd.DataFrame:
+    """Lê a feature store do DuckDB local ou do Databricks."""
+    columns = f"match_date, outcome, {', '.join(FEATURE_COLUMNS)}"
+    if settings.warehouse_backend == "databricks":
+        if not settings.databricks_host or not settings.databricks_http_path:
+            raise TrainingError("Configure DATABRICKS_HOST e DATABRICKS_HTTP_PATH no .env.")
+        if not settings.databricks_token:
+            raise TrainingError("Configure DATABRICKS_TOKEN no .env.")
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", settings.databricks_catalog):
+            raise TrainingError("DATABRICKS_CATALOG contem identificador invalido.")
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", settings.databricks_schema):
+            raise TrainingError("DATABRICKS_SCHEMA contem identificador invalido.")
+
+        try:
+            from databricks import sql
+            from databricks.sql.exc import Error as DatabricksSQLError
+        except ImportError as exc:
+            raise TrainingError(
+                "Dependencias Databricks ausentes. Execute `uv sync --extra databricks`."
+            ) from exc
+
+        host = settings.databricks_host.removeprefix("https://").removeprefix("http://").rstrip("/")
+        table = (
+            f"`{settings.databricks_catalog}`."
+            f"`{settings.databricks_schema}_marts`.`feature_store_matches`"
+        )
+        try:
+            with (
+                sql.connect(
+                    server_hostname=host,
+                    http_path=settings.databricks_http_path,
+                    access_token=settings.databricks_token,
+                ) as connection,
+                connection.cursor() as cursor,
+            ):
+                cursor.execute(f"select {columns} from {table} order by match_date")
+                rows = cursor.fetchall()
+                names = [column[0] for column in cursor.description]
+            return pd.DataFrame.from_records(rows, columns=names)
+        except DatabricksSQLError as exc:
+            raise TrainingError(
+                "Nao foi possivel ler a feature store no Databricks. "
+                "Confirme se `make databricks-build` concluiu com sucesso."
+            ) from exc
+
+    if not settings.warehouse_path.is_file():
         raise TrainingError(
-            f"Warehouse nao encontrado em {warehouse_path}. Execute `make dbt-build` antes."
+            f"Warehouse nao encontrado em {settings.warehouse_path}. "
+            "Execute `make dbt-build` antes."
         )
 
     try:
-        with duckdb.connect(str(warehouse_path), read_only=True) as connection:
+        with duckdb.connect(str(settings.warehouse_path), read_only=True) as connection:
             return connection.execute(
-                f"select match_date, outcome, {', '.join(FEATURE_COLUMNS)} "
-                f"from {FEATURE_STORE_TABLE} order by match_date"
+                f"select {columns} from {FEATURE_STORE_TABLE} order by match_date"
             ).fetchdf()
     except duckdb.Error as exc:
         raise TrainingError(
@@ -81,7 +124,7 @@ def load_feature_store(warehouse_path: Path) -> pd.DataFrame:
 
 def run_training(settings: Settings) -> tuple[dict[str, float], str]:
     """Treina o modelo, registra métricas e artefato no MLflow."""
-    matches = load_feature_store(settings.warehouse_path)
+    matches = load_feature_store(settings)
     model, metrics = train_temporal_model(matches)
 
     settings.ensure_dirs()

@@ -1,4 +1,5 @@
-.PHONY: install lint format test ingest dbt-deps dbt-build dbt-test train pipeline \
+.PHONY: install install-databricks lint format test ingest dbt-deps dbt-build dbt-test train pipeline \
+        databricks-debug databricks-ingest databricks-build databricks-test databricks-train databricks-pipeline \
         docker-build docker-pipeline docker-dbt mlflow-up mlflow-down clean
 
 export DBT_PROFILES_DIR := $(CURDIR)/dbt
@@ -8,6 +9,9 @@ DBT_TARGET ?= dev
 
 install:
 	uv sync
+
+install-databricks:
+	uv sync --extra databricks
 
 lint:
 	uv run ruff check src tests
@@ -37,6 +41,23 @@ train:
 
 # Pipeline completo: raw -> dbt -> feature store -> modelo.
 pipeline: ingest dbt-build train
+
+databricks-ingest:
+	uv run --extra databricks brasileirao ingest-databricks
+
+databricks-debug:
+	cd dbt && uv run --extra databricks dbt debug --target databricks
+
+databricks-build:
+	cd dbt && uv run --extra databricks dbt build --target databricks
+
+databricks-test:
+	cd dbt && uv run --extra databricks dbt test --target databricks
+
+databricks-train:
+	WAREHOUSE_BACKEND=databricks uv run --extra databricks brasileirao train
+
+databricks-pipeline: databricks-ingest databricks-build databricks-train
 
 # --- Docker -------------------------------------------------------------
 
